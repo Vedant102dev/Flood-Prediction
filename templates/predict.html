@@ -1,45 +1,248 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="text-align: center; padding: 40px;">
-    <h2>Select City!</h2>
-    <p>Select a city name to get information about it!</p>
-    <form method="POST" style="margin-top: 20px;">
-        <input type="text" name="city" placeholder="Enter a city" required style="padding: 10px; font-size: 16px;">
-        <button type="submit" class="btn">Go</button>
-    </form>
+<style>
+    .tab-btn-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+    .search-input-group {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .search-input {
+        padding: 10px 15px;
+        font-size: 16px;
+        width: 320px;
+        max-width: 100%;
+        box-sizing: border-box;
+        border-radius: 6px;
+        outline: none;
+    }
+    .sim-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    @media (max-width: 600px) {
+        .tab-btn-group {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0 10px;
+        }
+        .search-input-group {
+            flex-direction: column;
+            width: 100%;
+        }
+        .search-input {
+            width: 100% !important;
+        }
+        .search-input-group button {
+            width: 100% !important;
+        }
+        .sim-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .sim-box {
+            padding: 15px !important;
+            margin: 15px 10px 0 !important;
+        }
+    }
+</style>
+
+<div style="text-align: center; padding: 30px 20px 10px;">
+    <h2>Flood Risk Assessment & Weather Tester</h2>
+    <p style="color: #666; max-width: 600px; margin: 0 auto;">Search any real-world city for live conditions, or test
+        custom weather metrics to simulate flood risk alerts.</p>
+
+    <div class="tab-btn-group">
+        <button id="tabLiveBtn" onclick="switchTab('live')" class="btn" style="background: #0077b6;">🔍 Search Live
+            City</button>
+        <button id="tabSimBtn" onclick="switchTab('sim')" class="btn" style="background: #e76f51;">⚡ Test Custom Weather
+            / Monsoon</button>
+    </div>
+
+    <!-- Live City Search Form -->
+    <div id="liveForm" style="margin-top: 25px;">
+        <form method="POST">
+            <input type="hidden" name="mode" value="live">
+            <div style="display: inline-block; text-align: left;">
+                <div class="search-input-group">
+                    <input type="text" name="city" placeholder="Enter city name (e.g. Mumbai, Tokyo, London)" required
+                        class="search-input" style="border: 1px solid {% if error_message %}#e63946{% else %}#ccc{% endif %};">
+                    <button type="submit" class="btn">Search</button>
+                </div>
+                {% if error_message %}
+                <div
+                    style="color: #e63946; font-size: 0.85rem; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <span>⚠️</span> {{ error_message }}
+                </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Custom Weather Simulator Form -->
+    <div id="simForm" class="sim-box"
+        style="display: none; margin: 25px auto 0; max-width: 650px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: left;">
+        <h4 style="margin-top: 0; color: #333; text-align: center;">⚡ Simulate Weather Scenario</h4>
+        <p style="color: #666; font-size: 0.9rem; text-align: center; margin-bottom: 20px;">Use preset buttons below or
+            adjust sliders to see how the ML model reacts in real-time:</p>
+
+        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+            <button type="button" class="btn" style="background: #2a9d8f; font-size: 0.85rem; padding: 6px 12px;"
+                onclick="loadPreset('dry')">☀️ Dry Sunny Day (0mm)</button>
+            <button type="button" class="btn"
+                style="background: #f4a261; font-size: 0.85rem; padding: 6px 12px; color: #111;"
+                onclick="loadPreset('moderate')">🌧️ Moderate Rain (20mm)</button>
+            <button type="button" class="btn" style="background: #e63946; font-size: 0.85rem; padding: 6px 12px;"
+                onclick="loadPreset('heavy')">⛈️ Extreme Monsoon (80mm)</button>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="mode" value="simulation">
+            <input type="hidden" name="city" id="simCityName" value="Simulated Scenario">
+
+            <div class="sim-grid">
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">🌧️ Precipitation (mm): <span id="valPrecip"
+                            style="color: #e63946; font-weight: bold;">0</span> mm</label>
+                    <input type="range" name="sim_precip" id="inputPrecip" min="0" max="150" step="1" value="0"
+                        style="width: 100%;" oninput="document.getElementById('valPrecip').innerText = this.value">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">💧 Humidity (%): <span id="valHumidity"
+                            style="color: #0077b6; font-weight: bold;">45</span>%</label>
+                    <input type="range" name="sim_humidity" id="inputHumidity" min="10" max="100" step="1" value="45"
+                        style="width: 100%;" oninput="document.getElementById('valHumidity').innerText = this.value">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">🌡️ Temperature (°C): <span id="valTemp"
+                            style="font-weight: bold;">30</span>°C</label>
+                    <input type="range" name="sim_temp" id="inputTemp" min="5" max="45" step="1" value="30"
+                        style="width: 100%;" oninput="document.getElementById('valTemp').innerText = this.value">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">💨 Wind Speed (km/h): <span id="valWind"
+                            style="font-weight: bold;">15</span> km/h</label>
+                    <input type="range" name="sim_wind" id="inputWind" min="0" max="80" step="1" value="15"
+                        style="width: 100%;" oninput="document.getElementById('valWind').innerText = this.value">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">☁️ Cloud Cover (%): <span id="valCloud"
+                            style="font-weight: bold;">20</span>%</label>
+                    <input type="range" name="sim_cloud" id="inputCloud" min="0" max="100" step="1" value="20"
+                        style="width: 100%;" oninput="document.getElementById('valCloud').innerText = this.value">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 0.85rem;">🔥 Max Temperature (°C): <span id="valMaxTemp"
+                            style="font-weight: bold;">32</span>°C</label>
+                    <input type="range" name="sim_max_temp" id="inputMaxTemp" min="5" max="48" step="1" value="32"
+                        style="width: 100%;" oninput="document.getElementById('valMaxTemp').innerText = this.value">
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" class="btn" style="background: #e63946; width: 60%;">⚡ Run Model
+                    Prediction</button>
+            </div>
+        </form>
+    </div>
 </div>
 
+<script>
+    function switchTab(tab) {
+        if (tab === 'live') {
+            document.getElementById('liveForm').style.display = 'block';
+            document.getElementById('simForm').style.display = 'none';
+            document.getElementById('tabLiveBtn').style.opacity = '1';
+            document.getElementById('tabSimBtn').style.opacity = '0.6';
+        } else {
+            document.getElementById('liveForm').style.display = 'none';
+            document.getElementById('simForm').style.display = 'block';
+            document.getElementById('tabLiveBtn').style.opacity = '0.6';
+            document.getElementById('tabSimBtn').style.opacity = '1';
+        }
+    }
+
+    function loadPreset(type) {
+        if (type === 'dry') {
+            document.getElementById('inputPrecip').value = 0;
+            document.getElementById('inputHumidity').value = 40;
+            document.getElementById('inputTemp').value = 32;
+            document.getElementById('inputMaxTemp').value = 34;
+            document.getElementById('inputWind').value = 12;
+            document.getElementById('inputCloud').value = 15;
+            document.getElementById('simCityName').value = "Simulated Dry Sunny Day";
+        } else if (type === 'moderate') {
+            document.getElementById('inputPrecip').value = 22;
+            document.getElementById('inputHumidity').value = 85;
+            document.getElementById('inputTemp').value = 26;
+            document.getElementById('inputMaxTemp').value = 28;
+            document.getElementById('inputWind').value = 22;
+            document.getElementById('inputCloud').value = 80;
+            document.getElementById('simCityName').value = "Simulated Moderate Rain (Watch Alert)";
+        } else if (type === 'heavy') {
+            document.getElementById('inputPrecip').value = 85;
+            document.getElementById('inputHumidity').value = 96;
+            document.getElementById('inputTemp').value = 24;
+            document.getElementById('inputMaxTemp').value = 26;
+            document.getElementById('inputWind').value = 38;
+            document.getElementById('inputCloud').value = 98;
+            document.getElementById('simCityName').value = "Simulated Monsoon Flood Disaster";
+        }
+        document.getElementById('valPrecip').innerText = document.getElementById('inputPrecip').value;
+        document.getElementById('valHumidity').innerText = document.getElementById('inputHumidity').value;
+        document.getElementById('valTemp').innerText = document.getElementById('inputTemp').value;
+        document.getElementById('valMaxTemp').innerText = document.getElementById('inputMaxTemp').value;
+        document.getElementById('valWind').innerText = document.getElementById('inputWind').value;
+        document.getElementById('valCloud').innerText = document.getElementById('inputCloud').value;
+    }
+</script>
+
 {% if prediction %}
-<div style="background-color: #f2f6fc; padding: 20px; margin: 20px auto; width: 90%; max-width: 800px; border-radius: 10px;">
-    <h3 style="text-align: center;">Information about {{ weather.city|lower }}</h3>
-    <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin: 20px 0;">
+<div
+    style="background-color: #f2f6fc; padding: 20px; margin: 20px auto; width: 90%; max-width: 800px; border-radius: 10px;">
+    <h3 style="text-align: center;">Information about {{ weather.city }}</h3>
+    <div
+        style="background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin: 20px 0;">
         <h4>Flood Prediction</h4>
         <h2 style="color: {{ 'green' if prediction == 'Safe' else 'red' }}">
             Flood Risk: {{ prediction }} ({{ confidence }}% Confidence)
         </h2>
-        <p>According to our ML model, we {{ 'did not detect any signs of a potential flood.' if prediction == 'Safe' else 'detected signs of a potential flood!' }}</p>
+        <p>According to our ML model, we {{ 'did not detect any signs of a potential flood.' if prediction == 'Safe'
+            else 'detected signs of a potential flood!' }}</p>
     </div>
 
     <!-- Ensemble Model Results -->
     {% if individual_probs %}
-    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <div
+        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin: 20px 0;">
         <h4 style="text-align: center;">🧠 Ensemble Model Breakdown</h4>
         <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
             <div style="text-align: center;">
                 <h5>XGBoost</h5>
-                <div style="font-size: 18px; font-weight: bold; color: {% if individual_probs['XGBoost'] > 50 %}red{% else %}green{% endif %}">
+                <div
+                    style="font-size: 18px; font-weight: bold; color: {% if individual_probs['XGBoost'] > 50 %}red{% else %}green{% endif %}">
                     {{ individual_probs['XGBoost'] }}%
                 </div>
             </div>
             <div style="text-align: center;">
                 <h5>Random Forest</h5>
-                <div style="font-size: 18px; font-weight: bold; color: {% if individual_probs['Random Forest'] > 50 %}red{% else %}green{% endif %}">
+                <div
+                    style="font-size: 18px; font-weight: bold; color: {% if individual_probs['Random Forest'] > 50 %}red{% else %}green{% endif %}">
                     {{ individual_probs['Random Forest'] }}%
                 </div>
             </div>
             <div style="text-align: center;">
                 <h5>Logistic Regression</h5>
-                <div style="font-size: 18px; font-weight: bold; color: {% if individual_probs['Logistic Regression'] > 50 %}red{% else %}green{% endif %}">
+                <div
+                    style="font-size: 18px; font-weight: bold; color: {% if individual_probs['Logistic Regression'] > 50 %}red{% else %}green{% endif %}">
                     {{ individual_probs['Logistic Regression'] }}%
                 </div>
             </div>
@@ -52,12 +255,30 @@
 
     <!-- Weather Info Cards -->
     <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-        <div class="card"><h4>Temperature (F)</h4><p>{{ weather.temp }}</p></div>
-        <div class="card"><h4>Max Temperature (F)</h4><p>{{ weather.max_temp }}</p></div>
-        <div class="card"><h4>Windspeed (mph)</h4><p>{{ weather.wind }}</p></div>
-        <div class="card"><h4>Cloud Cover (%)</h4><p>{{ weather.cloud }}</p></div>
-        <div class="card"><h4>Precipitation (mm)</h4><p>{{ weather.precip }}</p></div>
-        <div class="card"><h4>Humidity (%)</h4><p>{{ weather.humidity }}</p></div>
+        <div class="card">
+            <h4>Temperature (°C)</h4>
+            <p>{{ weather.temp }}</p>
+        </div>
+        <div class="card">
+            <h4>Max Temperature (°C)</h4>
+            <p>{{ weather.max_temp }}</p>
+        </div>
+        <div class="card">
+            <h4>Windspeed (km/h)</h4>
+            <p>{{ weather.wind }}</p>
+        </div>
+        <div class="card">
+            <h4>Cloud Cover (%)</h4>
+            <p>{{ weather.cloud }}</p>
+        </div>
+        <div class="card">
+            <h4>Precipitation (mm)</h4>
+            <p>{{ weather.precip }}</p>
+        </div>
+        <div class="card">
+            <h4>Humidity (%)</h4>
+            <p>{{ weather.humidity }}</p>
+        </div>
     </div>
 </div>
 {% endif %}

@@ -2,7 +2,32 @@
 {% block content %}
 <div class="home-container">
     <h1>🌊 RESCUE FORCE</h1>
-    <p>It’s concise, memorable, and conveys the idea of protection and vigilance in flood detection using advanced technology.</p>
-    <a href="/predict" class="btn">GET STARTED</a>
+    <p>Real-Time Flood Risk Intelligence for India powered by Machine Learning & Live Meteorology.</p>
+
+    <div style="margin-top: 50px; display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; padding: 0 20px;">
+        <!-- Option 1: Map Dashboard -->
+        <div
+            style="background: white; border-radius: 14px; padding: 30px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; border-top: 5px solid #e63946;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🗺️</div>
+            <h3 style="color: #222; margin: 10px 0;">India Risk Map Dashboard</h3>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px; min-height: 50px;">
+                Live interactive map displaying flood zones across India.
+            </p>
+            <a href="/map" class="btn" style="background: #e63946; display: inline-block; width: 80%;">Open Live Map</a>
+        </div>
+
+        <!-- Option 2: Search by City -->
+        <div
+            style="background: white; border-radius: 14px; padding: 30px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; border-top: 5px solid #0077b6;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🔍</div>
+            <h3 style="color: #222; margin: 10px 0;">Search by City</h3>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px; min-height: 50px;">
+                Enter any specific city or district name to get instant real-time flood risk probability and weather
+                analytics.
+            </p>
+            <a href="/predict" class="btn" style="background: #0077b6; display: inline-block; width: 80%;">Search
+                City</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
