@@ -127,16 +127,36 @@ def predict_flood(weather_data):
 
     precip = weather_data.get("precip", 0.0)
     humidity = weather_data.get("humidity", 0.0)
-    if precip <= 0.05:
-        ensemble_prob = min(ensemble_prob, 0.08)
-        xgb_prob = min(xgb_prob, 0.08)
-        rf_prob = min(rf_prob, 0.08)
-        logistic_prob = min(logistic_prob, 0.08)
-    elif precip < 3.0 and humidity < 85:
-        ensemble_prob = min(ensemble_prob, 0.20)
-        xgb_prob = min(xgb_prob, 0.20)
-        rf_prob = min(rf_prob, 0.20)
-        logistic_prob = min(logistic_prob, 0.20)
+
+    # Meteorological safety constraints:
+    # A flood physically cannot occur without substantial rainfall.
+    if precip < 2.0:
+        # Faint drizzle, dew, or morning mist (< 2mm) -> virtually 0% flood chance regardless of humidity
+        clamp = 0.05
+        ensemble_prob = min(ensemble_prob, clamp)
+        xgb_prob = min(xgb_prob, clamp)
+        rf_prob = min(rf_prob, clamp)
+        logistic_prob = min(logistic_prob, clamp)
+    elif precip < 10.0:
+        # Light rain (< 10mm) -> strictly Safe (< 18%)
+        clamp = 0.18
+        ensemble_prob = min(ensemble_prob, clamp)
+        xgb_prob = min(xgb_prob, clamp)
+        rf_prob = min(rf_prob, clamp)
+        logistic_prob = min(logistic_prob, clamp)
+    elif precip < 25.0:
+        # Moderate rain (10-25mm) -> cannot trigger high risk alert (capped at 45%)
+        clamp = 0.45
+        ensemble_prob = min(ensemble_prob, clamp)
+        xgb_prob = min(xgb_prob, clamp)
+        rf_prob = min(rf_prob, clamp)
+        logistic_prob = min(logistic_prob, clamp)
+    elif precip < 40.0 and humidity < 80:
+        clamp = 0.50
+        ensemble_prob = min(ensemble_prob, clamp)
+        xgb_prob = min(xgb_prob, clamp)
+        rf_prob = min(rf_prob, clamp)
+        logistic_prob = min(logistic_prob, clamp)
 
     prediction_label = 1 if ensemble_prob > 0.5 else 0
     confidence = float(round(
