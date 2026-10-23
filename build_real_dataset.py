@@ -16,9 +16,6 @@ import pandas as pd
 import time
 import sys
 
-# ──────────────────────────────────────────────────────────────
-# 1. REAL HISTORICAL FLOOD EVENTS (Rain-induced floods & flash floods)
-# ──────────────────────────────────────────────────────────────
 FLOOD_EVENTS = [
     # ── India Floods & Cloudbursts ──
     {"name": "Kerala Aug 2018 Flood",        "lat":  9.94, "lon": 76.27, "start": "2018-08-08", "end": "2018-08-19"},
@@ -66,9 +63,6 @@ FLOOD_EVENTS = [
     {"name": "Australia Queensland Feb 2022", "lat": -27.47,"lon": 153.03,"start": "2022-02-25", "end": "2022-03-01"},
 ]
 
-# ──────────────────────────────────────────────────────────────
-# 2. DIVERSE SAFE/NORMAL PERIODS (Dry, pleasant, seasonal, hot, cold)
-# ──────────────────────────────────────────────────────────────
 SAFE_PERIODS = [
     # Indian Cities across different safe months
     {"name": "Mumbai dry winter",         "lat": 19.07, "lon": 72.88, "start": "2023-01-10", "end": "2023-01-30"},
@@ -153,7 +147,6 @@ print("Fetching extensive FLOOD event weather data...")
 for ev in FLOOD_EVENTS:
     print(f"  {ev['name']}...", end=" ", flush=True)
     records = fetch_weather(ev["lat"], ev["lon"], ev["start"], ev["end"])
-    # Only keep days with genuine flood-producing rain (>= 15mm)
     valid_count = 0
     for r in records:
         if r["Precipitation"] >= 15.0:

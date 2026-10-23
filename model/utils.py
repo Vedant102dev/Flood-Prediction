@@ -125,9 +125,6 @@ def predict_flood(weather_data):
         + logistic_prob * 0.2
     )
 
-    # Physical meteorology safety check:
-    # A flood cannot happen without significant rainfall. If precip is 0 or minimal (< 2mm),
-    # clamp flood risk so dry, sunny, or mild weather never triggers false flood warnings.
     precip = weather_data.get("precip", 0.0)
     humidity = weather_data.get("humidity", 0.0)
     if precip <= 0.05:
@@ -142,16 +139,16 @@ def predict_flood(weather_data):
         logistic_prob = min(logistic_prob, 0.20)
 
     prediction_label = 1 if ensemble_prob > 0.5 else 0
-    confidence = round(
+    confidence = float(round(
         max(ensemble_prob, 1 - ensemble_prob) * 100, 2
-    )
+    ))
 
     label = "Unsafe" if prediction_label == 1 else "Safe"
 
     individual_probs = {
-        "XGBoost": round(xgb_prob * 100, 1),
-        "Random Forest": round(rf_prob * 100, 1),
-        "Logistic Regression": round(logistic_prob * 100, 1)
+        "XGBoost": float(round(xgb_prob * 100, 1)),
+        "Random Forest": float(round(rf_prob * 100, 1)),
+        "Logistic Regression": float(round(logistic_prob * 100, 1))
     }
 
     return label, confidence, individual_probs
